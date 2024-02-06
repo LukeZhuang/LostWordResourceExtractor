@@ -27,7 +27,7 @@ def is_alt_costume(costume_id: str) -> str:
 # which is a tuple of output directory, subdirectory and file name
 # Currently we only handle the following kinds of files
 # The first element in the result is file type, in which:
-# 0: images, 1: timeline, 2: comic
+# 0-99: image types, 100-199: monobehaviour (scripted json) types
 def process_asset_path(asset_path: str) -> tuple[int, str, str, str] | None:
     # 1. unit square image:
     #      Assets/East/Units/1003/03/Thumbnail/Square.png
@@ -43,7 +43,7 @@ def process_asset_path(asset_path: str) -> tuple[int, str, str, str] | None:
     elif grp := match_pattern(
         asset_path, r"^assets/east/units/([0-9]+)/([0-9]+)/thumbnail/costume.png$"
     ):
-        return 0, "UnitCostume", is_alt_costume(grp[1]), "C" + grp[0] + grp[1] + ".png"
+        return 1, "UnitCostume", is_alt_costume(grp[1]), "C" + grp[0] + grp[1] + ".png"
 
     # 3. unit half body image:
     #      Assets/East/Units/1003/03/Thumbnail/Change.png
@@ -51,7 +51,7 @@ def process_asset_path(asset_path: str) -> tuple[int, str, str, str] | None:
     elif grp := match_pattern(
         asset_path, r"^assets/east/units/([0-9]+)/([0-9]+)/thumbnail/change.png$"
     ):
-        return 0, "UnitChange", is_alt_costume(grp[1]), "CH" + grp[0] + grp[1] + ".png"
+        return 2, "UnitChange", is_alt_costume(grp[1]), "CH" + grp[0] + grp[1] + ".png"
 
     # 4. unit full sprites:
     #      Assets/East/Units/1003/03/G100303/G100303.png
@@ -61,7 +61,7 @@ def process_asset_path(asset_path: str) -> tuple[int, str, str, str] | None:
     ):
         assert grp[0] == grp[2][:-2] and grp[0] == grp[3][:-2]
         assert grp[1] == grp[2][-2:]
-        return 0, "UnitFullBody", is_alt_costume(grp[1]), "G" + grp[0] + grp[1] + ".png"
+        return 3, "UnitFullBody", is_alt_costume(grp[1]), "G" + grp[0] + grp[1] + ".png"
 
     # 5. unit icon face:
     #      Assets/East/Units/1100/01/Thumbnail/IconFace.png
@@ -70,7 +70,7 @@ def process_asset_path(asset_path: str) -> tuple[int, str, str, str] | None:
         asset_path, r"^assets/east/units/([0-9]+)/([0-9]+)/thumbnail/iconface.png$"
     ):
         return (
-            0,
+            4,
             "UnitIconFace",
             is_alt_costume(grp[1]),
             "IF" + grp[0] + grp[1] + ".png",
@@ -84,10 +84,16 @@ def process_asset_path(asset_path: str) -> tuple[int, str, str, str] | None:
         r"^assets/east/units/([0-9]+)/([0-9]+)/ui/sprite/(shot|spell)_btn_([a-c]).png$",
     ):
         return (
-            0,
+            5,
             "UnitShotIcon",
             is_alt_costume(grp[1]),
-            (("SHB" if grp[2] else "SPB") + grp[0] + grp[1] + grp[3].upper() + ".png"),
+            (
+                ("SHB" if grp[2] == "shot" else "SPB")
+                + grp[0]
+                + grp[1]
+                + grp[3].upper()
+                + ".png"
+            ),
         )
 
     # 7. picture square image:
@@ -96,7 +102,7 @@ def process_asset_path(asset_path: str) -> tuple[int, str, str, str] | None:
     elif grp := match_pattern(
         asset_path, r"^assets/east/pictures/([0-9]+)/thumbsquare.png$"
     ):
-        return 0, "PictureSquare", "", "PTS" + grp[0] + ".png"
+        return 6, "PictureSquare", "", "PTS" + grp[0] + ".png"
 
     # 8. picture gallery/pray image:
     #      Assets/East/Pictures/319/ThumbLarge.png
@@ -104,28 +110,36 @@ def process_asset_path(asset_path: str) -> tuple[int, str, str, str] | None:
     elif grp := match_pattern(
         asset_path, r"^assets/east/pictures/([0-9]+)/thumblarge.png$"
     ):
-        return 0, "PictureLarge", "", "PTL" + grp[0] + ".png"
+        return 7, "PictureLarge", "", "PTL" + grp[0] + ".png"
 
     # 9. picture full image:
     #      Assets/East/Pictures/319/Efuda.png
     #        -> PictureEfuda/PE319.png
     elif grp := match_pattern(asset_path, r"^assets/east/pictures/([0-9]+)/efuda.png$"):
-        return 0, "PictureEfuda", "", "PE" + grp[0] + ".png"
+        return 8, "PictureEfuda", "", "PE" + grp[0] + ".png"
 
-    # 10. unit barrage timeline file:
+    # 10. comic background:
+    #       Assets/East/Graphics/Comic/BG/10340101.png
+    #         -> ComicBackGround/CBG10340101.png
+    elif grp := match_pattern(
+        asset_path, r"^assets/east/graphics/comic/bg/([0-9]+).png$"
+    ):
+        return 9, "ComicBackGround", "", "CBG" + grp[0] + ".png"
+
+    # 11. unit barrage timeline file:
     #      Assets/East/Units/1025/Timeline/Barrage10.asset
     #        -> Timeline/TB102510.asset
     elif grp := match_pattern(
         asset_path,
         r"^assets/east/units/([0-9]+)/timeline/barrage([12347])([0123]).asset$",
     ):
-        return 1, "Timeline", "", "TB" + grp[0] + grp[1] + grp[2] + ".asset"
+        return 100, "Timeline", "", "TB" + grp[0] + grp[1] + grp[2] + ".json"
 
-    # 11. plot script file:
+    # 12. plot script file:
     #      Assets/East/Comics/uo/Event16/Extra/Episode4.asset
     #        -> Episode/EP_event16-extra-episode4.asset
     elif grp := match_pattern(asset_path, r"^assets/east/comics/uo/(.*)\.asset$"):
-        return 2, "Episode", "", "-".join(grp[0].split("/")) + ".asset"
+        return 101, "Comic", "", "-".join(grp[0].split("/")) + ".json"
     return None
 
 

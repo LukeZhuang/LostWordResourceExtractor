@@ -3,3 +3,4 @@ manifests/*
 download/*
 dicts/*
 output/*
+test.py
