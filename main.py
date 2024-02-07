@@ -36,6 +36,7 @@ except Exception:
 asset_list_path = os.path.join(dicts_dir, "asset_list.csv")
 bundle_dict_path = os.path.join(dicts_dir, "bundle_dict.csv")
 new_download_files_path = os.path.join(dicts_dir, "new_download_files.txt")
+env_info_path = os.path.join(dicts_dir, "env_info.txt")
 
 
 # manifest file to two dicts
@@ -164,5 +165,11 @@ with open(bundle_dict_path, "w") as bundle_dict_file:
 with open(new_download_files_path, "w") as new_download_files:
     for bundle_file_name in sorted(new_download_bundles):
         new_download_files.write(bundle_file_name + "\n")
+
+with open(env_info_path, "w") as env_info_file:
+    env_info_file.write("download_url_prefix=" + str(download_url_prefix) + "\n")
+    env_info_file.write(
+        "supported_asset_types=" + str(sorted(supported_asset_types)) + "\n"
+    )
 
 os.remove(manifest_file_path)
