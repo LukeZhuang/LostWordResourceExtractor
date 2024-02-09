@@ -15,7 +15,7 @@ from file_extractor import extract_image, extract_monobehaviour
 download_url_prefix = (
     "http://thcdn.gggamedownload.com/source/Assetbundle_Android_v5016/"
 )
-# download_url_prefix = "http://d3s38hlip7moa.cloudfront.net/assetbundle/android/20240117_141128/0XDngEOS"
+# download_url_prefix = "http://d3s38hlip7moa.cloudfront.net/assetbundle/android/20240117_141128/0XDngEOS/"
 download_dir = sys.argv[1]
 dicts_dir = sys.argv[2]
 output_dir = sys.argv[3]
