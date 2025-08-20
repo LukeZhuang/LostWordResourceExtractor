@@ -4,31 +4,45 @@
 """
 """
 
+import gzip
 import json
 import os
+import ssl
 import sys
 import wget
 from util import process_asset_path, read_bundle_dict
 from file_extractor import extract_image, extract_monobehaviour
 
+ssl._create_default_https_context = ssl._create_unverified_context
 
-download_url_prefix = (
-    "http://thcdn.gggamedownload.com/source/Assetbundle_Android_v5016/"
-)
-# download_url_prefix = "http://d3s38hlip7moa.cloudfront.net/assetbundle/android/20240117_141128/0XDngEOS/"
+#download_url_prefix = "http://thcdn.gggamedownload.com/source/Assetbundle_Android_v9036/"
+download_url_prefix = "https://d3s38hlip7moa.cloudfront.net/assetbundle/android/20250509_141935/Nuf3HEcZ/"
 download_dir = sys.argv[1]
 dicts_dir = sys.argv[2]
 output_dir = sys.argv[3]
 
 # only download and extract these types
 # Need to coordinate with process_asset_path in util.py
-supported_asset_types: set[int] = set([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 100, 101])
+#supported_asset_types: set[int] = set([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 100, 101])
+supported_asset_types: set[int] = set([0, 2, 3, 5, 6, 8, 9, 100])
+
+manifest_from_zip = True
 
 manifest_file_path = os.path.join(".", "manifest.json")
 print("downloading manifest")
 try:
-    manifest_url = download_url_prefix + "manifest.json"
-    output = wget.download(manifest_url, manifest_file_path, bar=None)
+    if manifest_from_zip:
+        zip_url = download_url_prefix + "7f5cb74af5d7f4b82200738fdbdc5a45"
+        manifest_zip_path = os.path.join(".", "manifest.tar.gz")
+        output = wget.download(zip_url, manifest_zip_path, bar=None)
+        with gzip.open(manifest_zip_path, 'rb') as file_in:
+            file_content = file_in.read()
+            with open(manifest_file_path, 'wb') as fo:
+                fo.write(file_content)
+            os.remove(manifest_zip_path)
+    else:
+        manifest_url = download_url_prefix + "manifest.json"
+        output = wget.download(manifest_url, manifest_file_path, bar=None)
 except Exception:
     print("download manifest failed, exiting")
     sys.exit(1)
@@ -171,5 +185,6 @@ with open(env_info_path, "w") as env_info_file:
     env_info_file.write(
         "supported_asset_types=" + str(sorted(supported_asset_types)) + "\n"
     )
+    env_info_file.write("manifest_from_zip=" + str(manifest_from_zip))
 
 os.remove(manifest_file_path)
